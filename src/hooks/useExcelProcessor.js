@@ -45,33 +45,38 @@ export const useExcelProcessor = () => {
   // Aplica mappings automaticamente
   useEffect(() => {
 
-    if (!data.length) return;
+  if (!data.length) return;
 
-    const mapped = data.map((item) => {
+  const excel = data.map((item, index) => {
 
-      const novosCampos = {};
+    const novosCampos = {};
 
-      Object.entries(item.campos).forEach(([excelField, value]) => {
+    Object.entries(item.campos).forEach(([excelField, value]) => {
 
-        const jsonField =
-          mappings?.[excelField]?.trim();
+      const jsonField =
+        mappings?.[excelField]?.trim();
 
-        // IGNORA CAMPOS VAZIOS
-        if (!jsonField) return;
+      // Ignora campos vazios
+      if (!jsonField) return;
 
-        novosCampos[jsonField] = value;
-
-      });
-
-      return {
-        campos: novosCampos,
-      };
+      novosCampos[jsonField] = value;
 
     });
 
-    setJson(mapped);
+    return {
+      [`linha${index + 1}`]: novosCampos,
+    };
 
-  }, [mappings, data]);
+  });
+
+  // Estrutura final
+  setJson([
+    {
+      excel,
+    },
+  ]);
+
+}, [mappings, data]);
 
   return {
     data,
