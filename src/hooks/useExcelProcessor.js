@@ -47,14 +47,15 @@ export const useExcelProcessor = () => {
 
   if (!data.length) return;
 
-  const excel = data.map((item, index) => {
+  // Converte cada linha
+  const items = data.map((item) => {
 
     const novosCampos = {};
 
     Object.entries(item.campos).forEach(([excelField, value]) => {
 
-      // Se existir mapping usa ele
-      // Senão usa o campo original
+      // Usa mapping se existir
+      // Senão usa nome original
       const jsonField =
         mappings?.[excelField]?.trim() ||
         excelField;
@@ -63,15 +64,15 @@ export const useExcelProcessor = () => {
 
     });
 
-    return {
-      [`linha${index + 1}`]: novosCampos,
-    };
+    return novosCampos;
 
   });
 
+  // Estrutura final
   setJson([
     {
-      excel,
+      items,
+      total: String(items.length),
     },
   ]);
 
