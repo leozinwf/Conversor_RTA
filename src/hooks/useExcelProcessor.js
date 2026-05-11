@@ -53,11 +53,11 @@ export const useExcelProcessor = () => {
 
     Object.entries(item.campos).forEach(([excelField, value]) => {
 
+      // Se existir mapping usa ele
+      // Senão usa o campo original
       const jsonField =
-        mappings?.[excelField]?.trim();
-
-      // Ignora campos vazios
-      if (!jsonField) return;
+        mappings?.[excelField]?.trim() ||
+        excelField;
 
       novosCampos[jsonField] = value;
 
@@ -69,7 +69,6 @@ export const useExcelProcessor = () => {
 
   });
 
-  // Estrutura final
   setJson([
     {
       excel,
