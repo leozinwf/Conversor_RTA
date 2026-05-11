@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { readExcel } from "../services/excelService";
 import { processRows } from "../utils/dataUtils";
 
@@ -6,48 +6,85 @@ export const useExcelProcessor = () => {
   const [data, setData] = useState([]);
   const [json, setJson] = useState([]);
   const [error, setError] = useState("");
-  const [fileName, setFileName] = useState(""); // Novo estado para o nome
+  const [fileName, setFileName] = useState("");
+  const [loading, setLoading] = useState(false);
 
+  // Sistema de mapeamento
+  const [mappings, setMappings] = useState({});
+
+  // Upload + processamento inicial
   const loadFile = async (file) => {
     try {
+      setLoading(true);
       setError("");
-      
-      // Remove a extensão do arquivo para usar apenas o nome
+
+      // Nome do arquivo sem extensão
       const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
       setFileName(nameWithoutExt);
 
-      // Usando a sua função original readExcel
+      // Lê Excel
       const rows = await readExcel(file);
-      setData(rows);
-      setJson([]);
+
+      // Processa linhas
+      const processed = processRows(rows);
+
+      // Salva dados
+      setData(processed);
+
+      // JSON inicial
+      setJson(processed);
+
     } catch (err) {
-      setError("Erro ao ler arquivo");
       console.error(err);
+      setError("Erro ao processar arquivo");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const generateJson = () => {
-    try {
-      if (data.length === 0) {
-        setError("Não há dados para converter.");
-        return;
-      }
-      
-      // Mantendo o uso do seu utils original
-      const result = processRows(data);
-      setJson(result);
-      setError("");
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+  // Aplica mappings automaticamente
+  useEffect(() => {
+
+    if (!data.length) return;
+
+    const mapped = data.map((item) => {
+
+      const novosCampos = {};
+
+      Object.entries(item.campos).forEach(([excelField, value]) => {
+
+        const jsonField =
+          mappings?.[excelField]?.trim();
+
+        // IGNORA CAMPOS VAZIOS
+        if (!jsonField) return;
+
+        novosCampos[jsonField] = value;
+
+      });
+
+      return {
+        campos: novosCampos,
+      };
+
+    });
+
+    setJson(mapped);
+
+  }, [mappings, data]);
 
   return {
     data,
     json,
     error,
-    fileName, // Retornando a variável para ser usada no App.jsx
+    fileName,
+    loading,
+
+    // Mapping
+    mappings,
+    setMappings,
+
+    // Actions
     loadFile,
-    generateJson
   };
 };

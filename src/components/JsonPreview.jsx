@@ -1,23 +1,37 @@
-// src/components/JsonPreview.jsx
 export default function JsonPreview({ json }) {
-  const hasJson = json && json.length > 0;
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(
+      JSON.stringify(json, null, 2)
+    );
+  };
 
   return (
-    <div className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 overflow-hidden flex flex-col h-[500px]">
-      <div className="bg-slate-950 border-b border-slate-800 px-4 py-3 flex justify-between items-center">
-        <h2 className="font-semibold text-slate-200 text-sm flex items-center gap-2">
-          <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-          Saída JSON (RTA)
-        </h2>
+    <div className="rounded-2xl overflow-hidden border border-slate-800 bg-[#020817] h-full flex flex-col">
+      <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-white">
+            Saída JSON (RTA)
+          </h3>
+
+          <p className="text-xs text-slate-400 mt-1">
+            {json?.length || 0} registros convertidos
+          </p>
+        </div>
+
+        <button
+          onClick={handleCopy}
+          className="bg-emerald-500 hover:bg-emerald-400 transition px-4 py-2 rounded-lg text-sm font-semibold text-white"
+        >
+          Copiar JSON
+        </button>
       </div>
-      <div className="p-4 flex-grow overflow-auto bg-slate-900/50">
-        {hasJson ? (
-          <pre className="text-xs text-emerald-400 font-mono selection:bg-emerald-500/30">{JSON.stringify(json, null, 2)}</pre>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-slate-600">
-            <p className="text-sm">Aguardando geração do JSON...</p>
-          </div>
-        )}
+
+      <div className="overflow-auto p-5 text-sm flex-1">
+        <pre className="text-emerald-300 whitespace-pre-wrap break-words">
+          {json?.length
+            ? JSON.stringify(json, null, 2)
+            : "Aguardando arquivo Excel..."}
+        </pre>
       </div>
     </div>
   );

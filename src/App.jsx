@@ -1,96 +1,162 @@
-import { useState } from "react";
 import Header from "./components/Header";
 import FileUpload from "./components/FileUpload";
 import DataPreview from "./components/DataPreview";
 import JsonPreview from "./components/JsonPreview";
-import ActionButtons from "./components/ActionButtons";
+import MappingEditor from "./components/MappingEditor";
 import { useExcelProcessor } from "./hooks/useExcelProcessor";
 
 export default function App() {
-  const { data, json, error, fileName, loadFile, generateJson } = useExcelProcessor();
-  const [notification, setNotification] = useState(null);
 
-  const showNotification = (msg) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
-  };
+  const {
+    data,
+    json,
+    error,
+    fileName,
+    loadFile,
+    loading,
+    mappings,
+    setMappings,
+  } = useExcelProcessor();
 
   return (
-    <div className="min-h-screen bg-slate-100 pb-12 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-100">
+
       <Header />
 
-      {/* Alertas de tela integrados */}
-      {notification && (
-        <div className="fixed top-24 right-6 z-50 animate-in fade-in slide-in-from-right-4">
-          <div className="bg-emerald-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-            <span className="font-bold">{notification}</span>
+      <main className="max-w-7xl mx-auto px-6 py-10">
+
+        {/* HERO */}
+        <div className="mb-10">
+
+          <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            Conversão inteligente de planilhas
           </div>
-        </div>
-      )}
 
-      <main className="max-w-7xl mx-auto px-6">
-        <div className="space-y-8">
-          
-          {/* PASSO 1: UPLOAD */}
-          <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-            <div className="flex items-center gap-4 mb-6">
-              <span className="bg-emerald-500 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-emerald-200">1</span>
-              <div>
-                <h2 className="text-xl font-black text-slate-800">CARREGAR PLANILHA</h2>
-                <p className="text-sm text-slate-500">Selecione o arquivo Excel extraído do sistema.</p>
-              </div>
-            </div>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight">
+            Excel →
+            <span className="text-emerald-500"> JSON</span>
+          </h1>
+
+          <p className="text-slate-500 mt-4 text-lg max-w-2xl">
+            Transforme planilhas em estruturas JSON prontas para automações,
+            integrações e RPA.
+          </p>
+
+        </div>
+
+        {/* CONTAINER PRINCIPAL */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+
+          {/* UPLOAD */}
+          <div className="p-8 border-b border-slate-100">
+
             <FileUpload onUpload={loadFile} />
-          </section>
 
-          {/* FLUXO DE TRABALHO (Só aparece após o upload) */}
-          {data.length > 0 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-500">
-              
-              {/* PASSO 2: VISUALIZAÇÃO E CONVERSÃO */}
-              <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-                <div className="flex items-center gap-4 mb-8">
-                  <span className="bg-emerald-500 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-emerald-200">2</span>
-                  <div>
-                    <h2 className="text-xl font-black text-slate-800">REVISÃO E CONVERSÃO</h2>
-                    <p className="text-sm text-slate-500">Verifique os dados antes de gerar o JSON de automação.</p>
-                  </div>
-                </div>
+          </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-600">Planilha Excel</h3>
-                      <span className="text-[10px] text-slate-400 font-mono italic">Arraste para o lado para ver colunas ➔</span>
-                    </div>
-                    <DataPreview data={data} />
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Saída Estruturada</h3>
-                    <JsonPreview json={json} />
-                  </div>
-                </div>
+          {/* LOADING */}
+          {loading && (
 
-                {/* PASSO 3: AÇÕES FINAIS */}
-                <div className="mt-12 pt-10 border-t border-slate-100 flex flex-col items-center">
-                  <div className="bg-slate-50 rounded-2xl p-8 w-full max-w-2xl text-center border border-slate-200">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Tudo pronto para os robôs?</h3>
-                    <ActionButtons 
-                      onGenerate={generateJson} 
-                      json={json} 
-                      hasData={data.length > 0} 
-                      notify={showNotification}
-                      originalFileName={fileName}
-                    />
-                  </div>
-                </div>
-              </section>
+            <div className="p-12 flex flex-col items-center justify-center">
+
+              <div className="w-14 h-14 rounded-full border-4 border-slate-200 border-t-emerald-500 animate-spin" />
+
+              <p className="mt-6 text-slate-500 font-medium">
+                Processando planilha...
+              </p>
+
             </div>
+
           )}
+
+          {/* CONTEÚDO */}
+          {!loading && data.length > 0 && (
+
+            <div className="p-8 space-y-8">
+
+              {/* STATS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+
+                  <p className="text-sm text-slate-500">
+                    Arquivo
+                  </p>
+
+                  <h3 className="text-lg font-bold text-slate-800 mt-2 truncate">
+                    {fileName}
+                  </h3>
+
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+
+                  <p className="text-sm text-slate-500">
+                    Registros
+                  </p>
+
+                  <h3 className="text-lg font-bold text-slate-800 mt-2">
+                    {data.length}
+                  </h3>
+
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+
+                  <p className="text-sm text-slate-500">
+                    Status
+                  </p>
+
+                  <h3 className="text-lg font-bold text-emerald-600 mt-2">
+                    Estrutura válida
+                  </h3>
+
+                </div>
+
+              </div>
+
+              {/* MAPEAMENTO */}
+              <MappingEditor
+                headers={Object.keys(data[0]?.campos || {})}
+                mappings={mappings}
+                setMappings={setMappings}
+                data={data}
+              />
+
+              {/* PREVIEW */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+                <DataPreview data={data} />
+
+                <JsonPreview json={json} />
+
+              </div>
+
+            </div>
+
+          )}
+
+          {/* ERROR */}
+          {error && (
+
+            <div className="m-8 bg-red-50 border border-red-200 rounded-2xl p-5">
+
+              <h3 className="font-bold text-red-600 mb-2">
+                Erro ao processar arquivo
+              </h3>
+
+              <p className="text-red-500 text-sm">
+                {error}
+              </p>
+
+            </div>
+
+          )}
+
         </div>
+
       </main>
+
     </div>
   );
 }
