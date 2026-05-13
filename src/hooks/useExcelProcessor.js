@@ -11,6 +11,11 @@ export const useExcelProcessor = () => {
 
   // Sistema de mapeamento
   const [mappings, setMappings] = useState({});
+  
+  // NOVO: Sistema de template base configurável
+  const [wrapperTemplate, setWrapperTemplate] = useState(
+    '[\n  {\n    "items": "{{items}}",\n    "total": "{{total}}"\n  }\n]'
+  );
 
   // Upload + processamento inicial
   const loadFile = async (file) => {
@@ -18,22 +23,14 @@ export const useExcelProcessor = () => {
       setLoading(true);
       setError("");
 
-      // Nome do arquivo sem extensão
       const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
       setFileName(nameWithoutExt);
 
-      // Lê Excel
       const rows = await readExcel(file);
-
-      // Processa linhas
       const processed = processRows(rows);
 
-      // Salva dados
       setData(processed);
-
-      // JSON inicial
       setJson(processed);
-
     } catch (err) {
       console.error(err);
       setError("Erro ao processar arquivo");
@@ -42,41 +39,60 @@ export const useExcelProcessor = () => {
     }
   };
 
-  // Aplica mappings automaticamente
+  // NOVO: Função auxiliar para suportar aninhamento (dot notation)
+  const setNestedValue = (obj, path, value) => {
+    const keys = path.split('.');
+    let current = obj;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) current[keys[i]] = {};
+      current = current[keys[i]];
+    }
+    current[keys[keys.length - 1]] = value;
+  };
+
+  // Aplica mappings e template automaticamente
   useEffect(() => {
+    if (!data.length) return;
 
-  if (!data.length) return;
+    // Converte cada linha com suporte a objetos aninhados
+    const items = data.map((item) => {
+      const novosCampos = {};
 
-  // Converte cada linha
-  const items = data.map((item) => {
+      Object.entries(item.campos).forEach(([excelField, value]) => {
+        const jsonField = mappings?.[excelField]?.trim() || excelField;
+        setNestedValue(novosCampos, jsonField, value);
+      });
 
-    const novosCampos = {};
-
-    Object.entries(item.campos).forEach(([excelField, value]) => {
-
-      // Usa mapping se existir
-      // Senão usa nome original
-      const jsonField =
-        mappings?.[excelField]?.trim() ||
-        excelField;
-
-      novosCampos[jsonField] = value;
-
+      return novosCampos;
     });
 
-    return novosCampos;
+    // Aplica a estrutura do Template Raiz
+    try {
+      const parsedTemplate = JSON.parse(wrapperTemplate);
 
-  });
+      const replacePlaceholders = (obj) => {
+        if (typeof obj === 'string') {
+          if (obj === '{{items}}') return items;
+          if (obj === '{{total}}') return String(items.length);
+          return obj;
+        }
+        if (Array.isArray(obj)) return obj.map(replacePlaceholders);
+        if (typeof obj === 'object' && obj !== null) {
+          const newObj = {};
+          for (let key in obj) {
+            newObj[key] = replacePlaceholders(obj[key]);
+          }
+          return newObj;
+        }
+        return obj;
+      };
 
-  // Estrutura final
-  setJson([
-    {
-      items,
-      total: String(items.length),
-    },
-  ]);
+      setJson(replacePlaceholders(parsedTemplate));
+    } catch (e) {
+      setJson({ error: "O template JSON da estrutura raiz é inválido. Verifique a sintaxe." });
+    }
 
-}, [mappings, data]);
+  }, [mappings, data, wrapperTemplate]);
 
   return {
     data,
@@ -84,12 +100,10 @@ export const useExcelProcessor = () => {
     error,
     fileName,
     loading,
-
-    // Mapping
     mappings,
     setMappings,
-
-    // Actions
+    wrapperTemplate,       // Expondo o template para o componente
+    setWrapperTemplate,    // Expondo o set para edição
     loadFile,
   };
 };
